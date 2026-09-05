@@ -21,6 +21,11 @@ UPLOAD_FOLDER = "documents"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
+@app.get("/")
+def health_check():
+    return {"status": "ok"}
+
+
 class KeyValidationRequest(BaseModel):
     api_key: str
 
