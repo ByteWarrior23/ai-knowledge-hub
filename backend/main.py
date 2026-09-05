@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from rag import analyze_full_document, process_pdf, query_documents, validate_api_key
+from rag import analyze_full_document, extract_graph, process_pdf, query_documents, validate_api_key
 
 app = FastAPI()
 
@@ -54,8 +54,9 @@ async def upload_document(file: UploadFile = File(...), api_key: str = Form(...)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        num_chunks = process_pdf(file_path)
+        num_chunks = process_pdf(file_path, api_key)
         analysis_result = analyze_full_document(file_path, api_key)
+        graph = extract_graph(file_path, api_key)
 
         return {
             "filename": file.filename,
@@ -63,6 +64,7 @@ async def upload_document(file: UploadFile = File(...), api_key: str = Form(...)
             "chunks": num_chunks,
             "summary": analysis_result.get("summary", "Summary failed."),
             "flashcards": analysis_result.get("flashcards", []),
+            "graph": graph,
         }
 
     except Exception as e:

@@ -8,7 +8,7 @@ import { useTheme } from "next-themes";
 import { 
   Upload, Search, FileText, Loader2, Sparkles, X, 
   CheckCircle2, XCircle, BookOpen, MessageSquare, 
-  Lightbulb, Lock, Key, LogOut, Sun, Moon, ArrowRight, Zap 
+  Lightbulb, Lock, Key, LogOut, Sun, Moon, ArrowRight, Zap, Plus 
 } from 'lucide-react';
 import { motion, AnimatePresence, useMotionTemplate, useMotionValue, Variants } from 'framer-motion';
 
@@ -18,6 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import KnowledgeGraph from "@/components/knowledge-graph";
+import type { GraphData } from "@/components/knowledge-graph";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -32,6 +34,7 @@ interface ProcessedData {
   summary: string;
   chunks: number;
   flashcards: Flashcard[];
+  graph: GraphData;
 }
 
 const fadeInUp: Variants = {
@@ -201,6 +204,9 @@ export default function Home() {
   const [flippedCard, setFlippedCard] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [loadingSteps, setLoadingSteps] = useState<string[]>([]);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [newQuestion, setNewQuestion] = useState('');
+  const [newAnswer, setNewAnswer] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -311,6 +317,14 @@ export default function Home() {
             return { ...prev, flashcards: prev.flashcards.filter((_, i) => i !== index) };
         });
     }, 300);
+  };
+
+  const handleAddCard = () => {
+    if (!newQuestion.trim() || !newAnswer.trim() || !data) return;
+    setData(prev => prev ? { ...prev, flashcards: [...prev.flashcards, { question: newQuestion.trim(), answer: newAnswer.trim() }] } : null);
+    setNewQuestion("");
+    setNewAnswer("");
+    setShowAddCard(false);
   };
 
   if (!isAuthenticated) {
@@ -468,7 +482,7 @@ export default function Home() {
               </div>
               <Tabs defaultValue="summary" className="w-full">
                 <TabsList className="w-full justify-start border-b border-border bg-transparent p-0 mb-8 space-x-6">
-                  {['Summary', 'Deep Search', 'Flashcards'].map((tab) => (
+                  {['Summary', 'Deep Search', 'Flashcards', 'Knowledge Graph'].map((tab) => (
                     <TabsTrigger key={tab} value={tab.toLowerCase().replace(' ', '')} className="px-0 pb-4 rounded-none bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-muted-foreground data-[state=active]:text-primary text-sm font-medium tracking-wide transition-all">
                       {tab}
                     </TabsTrigger>
@@ -504,7 +518,36 @@ export default function Home() {
                     )}
                   </motion.div>
                 </TabsContent>
+                <TabsContent value="knowledgegraph" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <KnowledgeGraph data={data.graph} />
+                </TabsContent>
                 <TabsContent value="flashcards" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">{data.flashcards.length} cards in deck</p>
+                    <Button variant="outline" size="sm" onClick={() => setShowAddCard(!showAddCard)} className="rounded-full border-border text-muted-foreground hover:text-foreground">
+                      <Plus className="w-4 h-4 mr-1" /> Add Card
+                    </Button>
+                  </div>
+                  <AnimatePresence>
+                    {showAddCard && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                        <div className="p-6 rounded-2xl border border-border bg-card space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Question</label>
+                            <Input value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} placeholder="Enter the question" className="bg-background border-border" />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Answer</label>
+                            <Input value={newAnswer} onChange={(e) => setNewAnswer(e.target.value)} placeholder="Enter the answer" className="bg-background border-border" />
+                          </div>
+                          <div className="flex gap-3">
+                            <Button onClick={handleAddCard} disabled={!newQuestion.trim() || !newAnswer.trim()} className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">Save Card</Button>
+                            <Button variant="outline" onClick={() => setShowAddCard(false)} className="rounded-lg border-border text-muted-foreground">Cancel</Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <AnimatePresence>
                       {data.flashcards.map((card, idx) => (
