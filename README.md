@@ -1,97 +1,107 @@
-# AI Knowledge Hub
+# NoteWave | AI Research Copilot & Knowledge Hub
 
-Retrieval-Augmented Generation (RAG) platform that turns PDF documents into summaries, study flashcards, and a context-aware Q&A chat.
+An AI-powered "Second Brain" and research ecosystem with a solid pitch-black design. Turns any PDF document into interactive research chats, audio-synced podcast deep-dives, 3D concept flashcards, agentic research debates, 3D knowledge graphs, adaptive quizzes, and bias integrity audits.
 
-## Features
+Powered by **Google Gemini 2.5 Flash**, **ChromaDB**, **Next.js 16 (Turbopack)**, and **FastAPI**.
 
-- PDF ingestion with chunking and vector embeddings
-- 5-point executive summary generation
-- AI-generated study flashcards
-- Semantic search over the document content
-- Bring-your-own-key: the Google Gemini API key is used per request and never stored
+---
 
-## Tech Stack
+## 🌟 The Intelligence Studios
 
-- Frontend: Next.js, Tailwind CSS, Framer Motion
-- Backend: FastAPI, LangChain, ChromaDB
-- LLM: Google Gemini 2.5 Flash
-- Vector Store: ChromaDB (local, persistent)
-- Orchestration: Docker Compose
+NoteWave organizes research into specialized cognitive studios:
 
-## Prerequisites
+- **Conversational RAG Copilot**: Multi-turn chat with semantic source citing and context retrieval over ChromaDB.
+- **🎙️ Podcast Studio**: Generates an engaging 2-host audio conversation between AI hosts ("Alex" & "Dr. Taylor"). Includes real-time equalizer wave visualizer, Web Speech playback, and script export.
+- **🗂️ 3D Flashcards Studio**: AI-driven concept extraction with interactive 3D card flips, active recall mastery tracking, and Creator Mode for custom cards.
+- **⚡ 3D Knowledge Graph**: Interactive 3D Force-Directed Graph (`react-force-graph-3d`) visualizing relationships between core concepts.
+- **⚔️ Agentic Debate**: Multi-persona research arena where **Dr. Skeptic** (Critic), **The Weaver** (Synthesizer), and **Veritas** (Fact-Checker) debate the core thesis of your documents.
+- **🛡️ Verified Vault**: Integrity auditor that calculates Truth Score %, Bias Index %, provenance signature, and detects unsupported claims or hallucinations.
+- **🧠 Adaptive Quiz Studio**: Generates custom multiple-choice assessments with real-time grading, conceptual difficulty tagging, and mastery reports.
+- **🎙️ Voice Immersion**: Real-time microphone listening with audio waveform aura and hands-free document query.
+- **📖 Executive Summary**: Structured 5-point executive synthesis and takeaway extraction.
+- **⌨️ Command Orchestration**: Global `/` command palette with keyboard navigation (`↑`, `↓`, `Enter`) for instant studio launching.
 
-- Docker Desktop
-- Google Gemini API key (https://aistudio.google.com/apikey)
+---
 
-## Getting Started
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS, Lucide Icons, Radix UI Primitives, React Force Graph 3D
+- **Backend**: FastAPI, LangChain, ChromaDB, Google GenAI SDK
+- **LLM**: Google Gemini 2.5 Flash
+- **Embeddings**: Google Gemini Embedding (`models/gemini-embedding-001`, 768-dim)
+- **Vector Store**: ChromaDB (local, persistent)
+
+---
+
+## 🚀 Getting Started
+
+### 1. Backend (FastAPI)
 
 ```bash
-git clone <your-repo-url>
-cd ai-knowledge-hub
+cd backend
+python -m venv venv
+# On Windows:
+venv\Scripts\activate
+# On Linux/macOS:
+source venv/bin/activate
+
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
 ```
 
-Set your API key:
+FastAPI will start on `http://localhost:8000` (API Docs: `http://localhost:8000/docs`).
+
+### 2. Frontend (Next.js)
 
 ```bash
-export GOOGLE_API_KEY=your_key_here
+cd frontend
+npm install --legacy-peer-deps
+npm run dev
 ```
 
-Run the full stack:
+Frontend will run on `http://localhost:3000`.
+
+---
+
+## 🐳 Docker Compose
 
 ```bash
 docker compose up --build
 ```
 
-Open:
-- Frontend: http://localhost:3000
-- API docs: http://localhost:8000/docs
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8000`
 
-## Run Without Docker
+---
 
-Backend:
-
-```bash
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
-
-Frontend:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## How It Works
-
-1. User uploads a PDF and provides a Gemini API key.
-2. The backend parses the PDF, splits it into chunks, and stores embeddings in ChromaDB.
-3. Gemini generates a summary and flashcards from the full document.
-4. Chat queries run similarity search against ChromaDB and pass the retrieved context to Gemini for grounded answers.
-
-## Project Structure
+## 📁 Project Structure
 
 ```bash
 ai-knowledge-hub/
-|-- backend/
-|   |-- Dockerfile
-|   |-- main.py
-|   |-- rag.py
-|   `-- requirements.txt
-|-- frontend/
-|   |-- Dockerfile
-|   `-- src/
-|       |-- app/
-|       |-- components/
-|       `-- lib/
-|-- docker-compose.yml
-`-- README.md
+├── backend/
+│   ├── main.py          # FastAPI endpoints (chat, ingest, podcast, debate, quiz, vault, graph)
+│   ├── rag.py           # Gemini 2.5 Flash RAG engine + ChromaDB vector storage
+│   ├── documents/       # Uploaded PDF document store
+│   └── requirements.txt # Python dependencies
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── globals.css   # Pitch-black aesthetic & markdown styling
+│   │   │   ├── layout.tsx    # Root metadata and theme provider
+│   │   │   └── page.tsx      # Dual-mode (Landing + 3-Column Dashboard)
+│   │   ├── components/
+│   │   │   ├── dashboard/    # SidebarLeft, SidebarRight, CommandPalette
+│   │   │   │   └── studios/  # Podcast, Flashcards, Graph, Debate, Vault, Quiz, Voice, Summary, Settings
+│   │   │   ├── landing/      # Drag & Drop Landing page
+│   │   │   └── ui/           # Radix & Tailwind UI primitives
+│   │   └── lib/              # Commands and research agent definitions
+│   ├── next.config.ts        # API rewrites proxying /api to FastAPI
+│   └── package.json
+└── README.md
 ```
 
-## License
+---
+
+## 📄 License
 
 MIT

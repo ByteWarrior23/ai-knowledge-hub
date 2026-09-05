@@ -6,8 +6,8 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Second Brain",
-  description: "Next-gen RAG Engine",
+  title: "NoteWave | AI Research Copilot",
+  description: "Second brain & research ecosystem powered by RAG, 3D studios, and voice immersion.",
 };
 
 export default function RootLayout({
@@ -16,8 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning className="dark">
+      <body className={`${inter.className} bg-black text-zinc-100`}>
         <Providers>
           {children}
         </Providers>
