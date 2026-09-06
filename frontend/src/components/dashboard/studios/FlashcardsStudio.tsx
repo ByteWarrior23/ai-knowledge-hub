@@ -146,9 +146,14 @@ export default function FlashcardsStudio({
           <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 text-zinc-400">
             <LayoutList className="w-12 h-12 opacity-20" />
             <p className="text-xs max-w-xs">Extract core study definitions with interactive 3D cards.</p>
-            <Button onClick={onGenerate} className="rounded-full px-6 bg-white text-black font-semibold text-xs">
-              Generate Flashcards
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={onGenerate} className="rounded-full px-6 bg-white text-black font-semibold text-xs">
+                Generate Flashcards
+              </Button>
+              <Button variant="outline" onClick={() => setIsAddOpen(true)} className="rounded-full px-6 text-xs icon-btn">
+                Add Manual
+              </Button>
+            </div>
           </div>
         ) : (
           <>
