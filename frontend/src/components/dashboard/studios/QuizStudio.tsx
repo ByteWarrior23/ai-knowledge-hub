@@ -79,11 +79,11 @@ export default function QuizStudio({
         </div>
         <div className="flex items-center gap-1">
           {stage === "report" && (
-            <Button variant="ghost" size="icon" onClick={() => setStage("setup")} className="h-8 w-8 text-zinc-400 hover:text-white">
+            <Button variant="ghost" size="icon" onClick={() => setStage("setup")} className="h-8 w-8 icon-btn">
               <RefreshCw className="w-3.5 h-3.5" />
             </Button>
           )}
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-zinc-400 hover:text-white">
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 icon-btn">
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -207,7 +207,7 @@ export default function QuizStudio({
                   <Trophy className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
-                  <h2 className="text-2xl font-bold text-white">{scorePercent}% Score</h2>
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{scorePercent}% Score</h2>
                   <p className="text-xs text-zinc-400">
                     You answered {correctCount} of {questions.length} questions correctly.
                   </p>

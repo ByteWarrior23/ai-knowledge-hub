@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import { Headphones, RefreshCw, Pause, Play, Download, X, Volume2, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { API_BASE } from "@/lib/api";
 
 export interface ScriptLine {
   speaker: string;
@@ -26,11 +28,16 @@ export default function PodcastStudio({
 }: PodcastStudioProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentLineIndex, setCurrentLineIndex] = useState<number | null>(null);
+  const [useCloudTts, setUseCloudTts] = useState(true);
   const isPlayingRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   isPlayingRef.current = isPlaying;
 
-  // Speech synthesis playback
   const stopPlayback = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
@@ -38,49 +45,79 @@ export default function PodcastStudio({
     setCurrentLineIndex(null);
   };
 
-  const playLine = (index: number) => {
+  const playWithElevenLabs = async (line: ScriptLine): Promise<boolean> => {
+    if (!useCloudTts) return false;
+    try {
+      const res = await axios.post(`${API_BASE}/api/tts`, {
+        text: line.text,
+        speaker: line.speaker,
+      });
+      if (res.data?.audio) {
+        const audio = new Audio(`data:audio/mpeg;base64,${res.data.audio}`);
+        audioRef.current = audio;
+        await new Promise<void>((resolve, reject) => {
+          audio.onended = () => resolve();
+          audio.onerror = () => reject(new Error("Audio playback failed"));
+          audio.play().catch(reject);
+        });
+        return true;
+      }
+    } catch {
+      setUseCloudTts(false);
+    }
+    return false;
+  };
+
+  const playWithSpeechSynthesis = (line: ScriptLine): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+        reject(new Error("Speech synthesis not supported"));
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(line.text);
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 1) {
+        if (line.speaker.toLowerCase().includes("host") || line.speaker.toLowerCase().includes("alex")) {
+          utterance.voice = voices[0];
+          utterance.pitch = 1.05;
+          utterance.rate = 1.02;
+        } else {
+          utterance.voice = voices[1] || voices[0];
+          utterance.pitch = 0.95;
+          utterance.rate = 0.98;
+        }
+      }
+
+      utterance.onend = () => resolve();
+      utterance.onerror = () => reject(new Error("Speech synthesis failed"));
+      window.speechSynthesis.speak(utterance);
+    });
+  };
+
+  const playLine = async (index: number) => {
     if (!script || index >= script.length) {
       stopPlayback();
       return;
     }
-
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      alert("Speech synthesis is not supported in this browser.");
-      setIsPlaying(false);
-      return;
-    }
+    if (!isPlayingRef.current) return;
 
     setCurrentLineIndex(index);
     const line = script[index];
-    const utterance = new SpeechSynthesisUtterance(line.text);
 
-    // Pick alternate voices if available
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 1) {
-      if (line.speaker.toLowerCase().includes("host") || line.speaker.toLowerCase().includes("alex")) {
-        utterance.voice = voices[0];
-        utterance.pitch = 1.05;
-        utterance.rate = 1.02;
-      } else {
-        utterance.voice = voices[1] || voices[0];
-        utterance.pitch = 0.95;
-        utterance.rate = 0.98;
+    try {
+      const usedCloud = await playWithElevenLabs(line);
+      if (!usedCloud) {
+        await playWithSpeechSynthesis(line);
       }
-    }
-
-    utterance.onend = () => {
       if (isPlayingRef.current) {
         setTimeout(() => {
           if (isPlayingRef.current) playLine(index + 1);
         }, 400);
       }
-    };
-
-    utterance.onerror = () => {
+    } catch {
       stopPlayback();
-    };
-
-    window.speechSynthesis.speak(utterance);
+    }
   };
 
   const togglePlayback = () => {
@@ -133,12 +170,12 @@ export default function PodcastStudio({
               size="icon"
               onClick={onGenerate}
               disabled={isLoading}
-              className="h-8 w-8 text-zinc-400 hover:text-white"
+              className="h-8 w-8 icon-btn"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
             </Button>
           )}
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-zinc-400 hover:text-white">
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 icon-btn">
             <X className="w-4 h-4" />
           </Button>
         </div>

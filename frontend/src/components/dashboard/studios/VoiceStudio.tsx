@@ -93,7 +93,7 @@ export default function VoiceStudio({ onClose, onTranscription }: VoiceStudioPro
             <p className="text-[10px] text-zinc-400">Real-Time Speech Interaction</p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-zinc-400 hover:text-white">
+        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 icon-btn">
           <X className="w-4 h-4" />
         </Button>
       </div>

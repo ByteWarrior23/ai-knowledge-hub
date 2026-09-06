@@ -91,7 +91,7 @@ export default function FlashcardsStudio({
         <div className="flex items-center gap-1">
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white">
+              <Button variant="ghost" size="icon" className="h-8 w-8 icon-btn">
                 <Plus className="w-4 h-4" />
               </Button>
             </DialogTrigger>
@@ -124,12 +124,12 @@ export default function FlashcardsStudio({
           </Dialog>
 
           {cards.length > 0 && (
-            <Button variant="ghost" size="icon" onClick={onGenerate} disabled={isLoading} className="h-8 w-8 text-zinc-400 hover:text-white">
+            <Button variant="ghost" size="icon" onClick={onGenerate} disabled={isLoading} className="h-8 w-8 icon-btn">
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-zinc-400 hover:text-white">
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 icon-btn">
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -205,7 +205,7 @@ export default function FlashcardsStudio({
                 variant="outline"
                 size="icon"
                 onClick={prevCard}
-                className="h-10 w-10 rounded-full border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-white"
+                className="h-10 w-10 rounded-full border-zinc-200 dark:border-zinc-800 icon-btn"
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
@@ -218,7 +218,7 @@ export default function FlashcardsStudio({
                   className={`rounded-full text-xs gap-1.5 ${
                     masteredIds.includes(currentIndex)
                       ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
-                      : "border-zinc-800 text-zinc-400 hover:text-white"
+                      : "border-zinc-200 dark:border-zinc-800 icon-btn"
                   }`}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -230,7 +230,7 @@ export default function FlashcardsStudio({
                 variant="outline"
                 size="icon"
                 onClick={nextCard}
-                className="h-10 w-10 rounded-full border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-white"
+                className="h-10 w-10 rounded-full border-zinc-200 dark:border-zinc-800 icon-btn"
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>

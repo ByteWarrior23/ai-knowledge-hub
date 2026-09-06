@@ -1,57 +1,134 @@
-# NoteWave | AI Research Copilot & Knowledge Hub
+<div align="center">
 
-An AI-powered "Second Brain" and research ecosystem with a solid pitch-black design. Turns any PDF document into interactive research chats, audio-synced podcast deep-dives, 3D concept flashcards, agentic research debates, 3D knowledge graphs, adaptive quizzes, and bias integrity audits.
+# NoteWave
 
-Powered by **Google Gemini 2.5 Flash**, **ChromaDB**, **Next.js 16 (Turbopack)**, and **FastAPI**.
+## **AI Research Copilot & Knowledge Hub**
 
----
+Your AI Research Copilot. Turn any PDF into interactive research chats, audio deep-dives, 3D concept maps, agentic debates, adaptive quizzes, and integrity audits - all inside a pitch-black, distraction-free workspace.
 
-## 🌟 The Intelligence Studios
+<img src="docs/notewave-dashboard.png" alt="NoteWave Dashboard" width="900" />
 
-NoteWave organizes research into specialized cognitive studios:
+</div>
 
-- **Conversational RAG Copilot**: Multi-turn chat with semantic source citing and context retrieval over ChromaDB.
-- **🎙️ Podcast Studio**: Generates an engaging 2-host audio conversation between AI hosts ("Alex" & "Dr. Taylor"). Includes real-time equalizer wave visualizer, Web Speech playback, and script export.
-- **🗂️ 3D Flashcards Studio**: AI-driven concept extraction with interactive 3D card flips, active recall mastery tracking, and Creator Mode for custom cards.
-- **⚡ 3D Knowledge Graph**: Interactive 3D Force-Directed Graph (`react-force-graph-3d`) visualizing relationships between core concepts.
-- **⚔️ Agentic Debate**: Multi-persona research arena where **Dr. Skeptic** (Critic), **The Weaver** (Synthesizer), and **Veritas** (Fact-Checker) debate the core thesis of your documents.
-- **🛡️ Verified Vault**: Integrity auditor that calculates Truth Score %, Bias Index %, provenance signature, and detects unsupported claims or hallucinations.
-- **🧠 Adaptive Quiz Studio**: Generates custom multiple-choice assessments with real-time grading, conceptual difficulty tagging, and mastery reports.
-- **🎙️ Voice Immersion**: Real-time microphone listening with audio waveform aura and hands-free document query.
-- **📖 Executive Summary**: Structured 5-point executive synthesis and takeaway extraction.
-- **⌨️ Command Orchestration**: Global `/` command palette with keyboard navigation (`↑`, `↓`, `Enter`) for instant studio launching.
+## Important Notice
+
+> **It is strongly recommended to run this application locally.**
+> The public deployment is intended purely as a portfolio demo. Because the LLM layer depends on Gemini free-tier keys, it may be **rate-limited** or run out of quota without notice. NoteWave handles this gracefully - it rotates through a pool of keys and automatically falls back to a **local Ollama model**, so it keeps answering even when the cloud quota is exhausted. Running locally gives you full control and complete data privacy.
 
 ---
 
-## 🛠️ Tech Stack
+## The Intelligence Studios
 
-- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS, Lucide Icons, Radix UI Primitives, React Force Graph 3D
-- **Backend**: FastAPI, LangChain, ChromaDB, Google GenAI SDK
-- **LLM**: Google Gemini 2.5 Flash
-- **Embeddings**: Google Gemini Embedding (`models/gemini-embedding-001`, 768-dim)
-- **Vector Store**: ChromaDB (local, persistent)
+NoteWave organizes research into specialized "Studios," each designed for a specific cognitive task:
+
+- **Conversational RAG Copilot**
+  Multi-turn document chat with semantic retrieval over ChromaDB, high-integrity system prompts, and a live status line. Greetings are handled conversationally - no accidental document dumps.
+
+- **Podcast Studio**
+  Generates an engaging audio deep-dive conversation between AI hosts ("Alex" & "Dr. Taylor") with Web Speech playback and a per-line script tracker.
+
+- **Flashcard Studio**
+  AI-driven concept extraction with an interactive 3D flip UI for active-recall studying.
+
+- **3D Knowledge Graph**
+  An interactive 3D Force-Directed Graph (`react-force-graph-3d`) visualizing relationships between core concepts, with a 2D SVG fallback so it always renders.
+
+- **Agentic Debate**
+  Multi-persona research arena where *Dr. Skeptic* (Critic), *The Weaver* (Synthesizer), and *Veritas* (Fact-Checker) debate the core thesis of your documents.
+
+- **Verified Vault**
+  Integrity auditor that computes a Truth Score, Bias Index, provenance signature, and flags unsupported claims.
+
+- **Quiz Studio**
+  Generates custom multiple-choice assessments with real-time grading, conceptual difficulty tagging, and mastery tracking.
+
+- **Voice Immersion**
+  Hands-free mic-based querying (Web Speech API) for talking to your document.
+
+- **Executive Summary**
+  Structured 5-point executive synthesis and takeaway extraction.
 
 ---
 
-## 🚀 Getting Started
+## Immersive Features
 
-### 1. Backend (FastAPI)
+- **Focus Mode**
+  UI transformation that dims distractions and simplifies the workspace for deep work.
+
+- **Command Orchestration**
+  Global `/` command palette with full keyboard navigation (`Up` / `Down` / `Enter`) for instant studio launching.
+
+- **Local Persistence**
+  API key, document metadata, and session settings synced to `localStorage` for privacy-first continuity.
+
+- **Key Rotation & Local Fallback**
+  A round-robin Gemini key pool that beds rate limits, plus automatic failover to a local Ollama model in `auto` mode.
+
+---
+
+## System Architecture
+
+1. **Ingestion Pipeline**
+   PDF text is semantically chunked, embedded with Gemini embeddings (768-dim), and stored in ChromaDB with strict `source_filename` filtering.
+
+2. **Hardened Chat Logic**
+   High-integrity system prompts prevent hallucinations and enforce academic rigor; a retrieval gate skips vector search for greetings and trivial messages.
+
+3. **Live Progress via Job Queue**
+   Chat runs as a background job; the UI polls a status endpoint every ~1.2 s and streams the backend's progress messages.
+
+4. **Studio Generation**
+   Every studio is a rigorously constrained JSON prompt with graceful fallbacks, so no studio can crash the API on malformed model output.
+
+---
+
+## Challenges & Learnings
+
+- **The Quota War**
+  Chat hung for minutes because all Gemini free-tier keys were exhausted. Solved with key rotation on `429`/`RESOURCE_EXHAUSTED` (fast rotation when a daily quota is blown, exponential backoff otherwise) and a transparent **Ollama fallback**.
+
+- **Local Model Constraints**
+  With only 7.7 GB RAM available, `qwen3:8b` OOM'd and `qwen3:4b` thrashed. The sweet spot became `qwen3:1.7b`, and sending `"think": false` stopped the model from streaming its inner monologue before the real answer.
+
+- **Greeting Grace**
+  Asking "hello" used to dump the entire stored document back at you. `_should_retrieve()` now detects greetings and chit-chat, disabling retrieval so the assistant replies conversationally.
+
+- **Always-Render Graphics**
+  WebGL can fail silently and blank the canvas. GraphStudio solves this with SSR-free dynamic imports plus a 2D SVG `ConceptMap2D` fallback so the concept map always renders.
+
+---
+
+## Tech Stack
+
+- **Core:** [Next.js 16](https://nextjs.org/), React 19, TypeScript, Tailwind CSS, Radix UI Primitives, framer-motion
+- **Backend:** FastAPI, LangChain, ChromaDB, Google GenAI SDK, httpx
+- **LLM:** Google Gemini (Gemini-first) with **automatic local Ollama fallback**
+- **Embeddings:** Google Gemini Embedding (`models/gemini-embedding-001`, 768-dim)
+- **Vector Store:** ChromaDB (local, persistent)
+- **Spatial UI:** `react-force-graph-3d` & Three.js
+- **Voice:** Web Speech API with optional ElevenLabs TTS
+
+---
+
+## How to Run Locally
+
+### Backend (FastAPI)
 
 ```bash
 cd backend
 python -m venv venv
-# On Windows:
+# Windows:
 venv\Scripts\activate
-# On Linux/macOS:
+# macOS / Linux:
 source venv/bin/activate
 
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-FastAPI will start on `http://localhost:8000` (API Docs: `http://localhost:8000/docs`).
+API starts on `http://localhost:8000` (interactive docs: `http://localhost:8000/docs`).
 
-### 2. Frontend (Next.js)
+### Frontend (Next.js)
 
 ```bash
 cd frontend
@@ -59,11 +136,19 @@ npm install --legacy-peer-deps
 npm run dev
 ```
 
-Frontend will run on `http://localhost:3000`.
+App runs on `http://localhost:3000`.
 
----
+### Environment Variables (`backend/.env`)
 
-## 🐳 Docker Compose
+```env
+GOOGLE_API_KEYS=key1,key2,key3      # Comma-separated pool (rotated on rate limits)
+GOOGLE_API_KEY=your_key             # Single-key fallback
+LLM_PROVIDER=auto                   # auto | gemini | ollama
+OLLAMA_MODEL=qwen3:1.7b             # Local model used when Gemini is unavailable
+ELEVENLABS_API_KEY=your_key         # Optional - browser TTS is used when absent
+```
+
+### Docker Compose
 
 ```bash
 docker compose up --build
@@ -74,34 +159,71 @@ docker compose up --build
 
 ---
 
-## 📁 Project Structure
+## Self-Hosting with Ollama
 
-```bash
+NoteWave natively supports fully-private execution over a local Ollama instance - no cloud LLM required.
+
+1. Download [Ollama](https://ollama.com/) and pull a model:
+   ```bash
+   ollama pull qwen3:1.7b
+   ```
+2. In `backend/.env`, set `LLM_PROVIDER=ollama` (or keep `auto` for Gemini-first with local fallback) and `OLLAMA_MODEL=qwen3:1.7b`.
+3. Restart the backend. All prompts now route securely to your local `http://localhost:11434` engine.
+
+---
+
+## Project Structure
+
+```
 ai-knowledge-hub/
 ├── backend/
-│   ├── main.py          # FastAPI endpoints (chat, ingest, podcast, debate, quiz, vault, graph)
-│   ├── rag.py           # Gemini 2.5 Flash RAG engine + ChromaDB vector storage
-│   ├── documents/       # Uploaded PDF document store
-│   └── requirements.txt # Python dependencies
+│   ├── main.py           # FastAPI app - chat (job queue + polling), upload, studios, TTS
+│   ├── rag.py            # RAG engine - embeddings, ChromaDB, Gemini + Ollama fallback, studios
+│   ├── key_pool.py       # Round-robin Gemini key pool with rate-limit detection
+│   ├── tts.py            # ElevenLabs synthesis (optional)
+│   ├── requirements.txt
+│   ├── chroma_db/        # Persistent vector store (auto-created)
+│   └── documents/        # Uploaded PDFs
 ├── frontend/
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── globals.css   # Pitch-black aesthetic & markdown styling
-│   │   │   ├── layout.tsx    # Root metadata and theme provider
-│   │   │   └── page.tsx      # Dual-mode (Landing + 3-Column Dashboard)
+│   │   │   ├── globals.css          # Pitch-black theme + markdown styling
+│   │   │   ├── layout.tsx           # Root layout + theme provider
+│   │   │   ├── page.tsx             # Landing + 3-column dashboard (chat, sources, studios)
+│   │   │   └── api/[...path]/route.ts  # Next.js proxy to the FastAPI backend
 │   │   ├── components/
-│   │   │   ├── dashboard/    # SidebarLeft, SidebarRight, CommandPalette
-│   │   │   │   └── studios/  # Podcast, Flashcards, Graph, Debate, Vault, Quiz, Voice, Summary, Settings
-│   │   │   ├── landing/      # Drag & Drop Landing page
-│   │   │   └── ui/           # Radix & Tailwind UI primitives
-│   │   └── lib/              # Commands and research agent definitions
-│   ├── next.config.ts        # API rewrites proxying /api to FastAPI
-│   └── package.json
-└── README.md
+│   │   │   ├── dashboard/           # SidebarLeft, SidebarRight, CommandPalette
+│   │   │   │   └── studios/         # Podcast, Flashcards, Graph, Debate, Vault, Quiz, Voice, Summary, Settings
+│   │   │   ├── landing/             # Drag-and-drop landing page
+│   │   │   └── ui/                  # Radix + Tailwind UI primitives
+│   │   └── lib/                     # API client, commands registry, research agent profiles
+│   └── next.config.ts               # Rewrites /api/* to the FastAPI backend
+├── docker-compose.yml
+├── PROJECT_DOCUMENTATION.md         # Full line-by-line engineering documentation
+└── docs/
+    └── notewave-dashboard.png       # Interface preview
 ```
 
 ---
 
-## 📄 License
+## Roadmap
+
+- [x] **Resilient LLM Layer:** Key rotation + automatic local Ollama fallback
+- [x] **Live Chat Progress:** Job queue + status polling
+- [ ] **Deployment:** Vercel frontend + managed backend host with a live Gemini key
+- [ ] **Persistence:** Durable chat jobs and document metadata (beyond `localStorage`)
+- [ ] **Authentication:** Per-user collections and access control
+- [ ] **Reranking:** Semantic reranking of retrieved chunks for sharper grounding
+
+---
+
+## License
 
 MIT
+
+---
+
+## Acknowledgements
+
+- **Project Blueprint:** Inspired by **Google NotebookLM**'s core research and application design.
+- **Architectural Guidance:** Strategic design, debugging, and quality assurance delivered with the assistance of Gemini-based AI tooling and open-source Ollama.

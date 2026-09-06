@@ -123,4 +123,10 @@
   .rotate-y-180 {
     transform: rotateY(180deg);
   }
+  .icon-btn {
+    @apply text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors;
+  }
+  .studio-selected {
+    @apply bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-white font-medium;
+  }
 }

@@ -8,3 +8,6 @@ langchain-community
 langchain-text-splitters
 langchain-chroma
 langchain-google-genai
+python-dotenv
+httpx
+google-genai

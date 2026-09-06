@@ -49,7 +49,7 @@ export default function SummaryStudio({
                 variant="ghost"
                 size="icon"
                 onClick={handleCopy}
-                className="h-8 w-8 text-zinc-400 hover:text-white"
+                className="h-8 w-8 icon-btn"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               </Button>
@@ -58,13 +58,13 @@ export default function SummaryStudio({
                 size="icon"
                 onClick={onGenerate}
                 disabled={isLoading}
-                className="h-8 w-8 text-zinc-400 hover:text-white"
+                className="h-8 w-8 icon-btn"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
               </Button>
             </>
           )}
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-zinc-400 hover:text-white">
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 icon-btn">
             <X className="w-4 h-4" />
           </Button>
         </div>

@@ -122,7 +122,7 @@ export default function LandingPage({
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="h-8 w-8 text-zinc-400 hover:text-white"
+            className="h-8 w-8 icon-btn"
           >
             {mounted ? (theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />) : null}
           </Button>
@@ -176,7 +176,7 @@ export default function LandingPage({
                   className={`p-4 rounded-2xl transition-colors ${
                     isDragging
                       ? "bg-purple-500/20 text-purple-300"
-                      : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400 group-hover:text-white"
+                      : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white"
                   }`}
                 >
                   {isUploading ? (
@@ -244,7 +244,7 @@ export default function LandingPage({
             <span>• Powered by Google Gemini 2.5 Flash & ChromaDB</span>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={onEnter} className="hover:text-white transition-colors">
+            <button onClick={onEnter} className="hover:text-zinc-900 dark:hover:text-white transition-colors">
               Launch Workspace
             </button>
           </div>

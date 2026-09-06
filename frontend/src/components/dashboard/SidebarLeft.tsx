@@ -90,7 +90,7 @@ export default function SidebarLeft({
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="h-8 w-8 text-zinc-400 hover:text-white"
+            className="h-8 w-8 icon-btn"
           >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>

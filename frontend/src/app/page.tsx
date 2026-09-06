@@ -20,14 +20,35 @@ import SidebarRight, { StudioType } from "@/components/dashboard/SidebarRight";
 import CommandPalette from "@/components/dashboard/CommandPalette";
 import LandingPage from "@/components/landing/LandingPage";
 import { COMMANDS, Command } from "@/lib/commands";
+import { API_BASE, getApiErrorMessage } from "@/lib/api";
+import { ToastContainer, ToastMessage } from "@/components/ui/toast";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 const DEFAULT_KEY = process.env.NEXT_PUBLIC_GEMINI_KEY || "";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
+
+interface StudioCacheEntry {
+  podcastScript: any[];
+  flashcards: any[];
+  graphData: any;
+  debateTranscript: any[];
+  vaultAudit: any;
+  quizQuestions: any[];
+  summaryText: string;
+}
+
+const emptyStudioCache = (): StudioCacheEntry => ({
+  podcastScript: [],
+  flashcards: [],
+  graphData: { nodes: [], links: [] },
+  debateTranscript: [],
+  vaultAudit: null,
+  quizQuestions: [],
+  summaryText: "",
+});
 
 export default function RootPage() {
   const { setTheme, theme } = useTheme();
@@ -41,13 +62,26 @@ export default function RootPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [chatStatus, setChatStatus] = useState("");
 
   // --- APPLICATION SETTINGS ---
   const [appSettings, setAppSettings] = useState({
     focusMode: false,
-    autoAudit: true,
+    autoAudit: false,
     spacedRepetition: false,
   });
+
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const toastIdRef = useRef(0);
+
+  const showToast = (message: string, type: ToastMessage["type"] = "info") => {
+    const id = ++toastIdRef.current;
+    setToasts((prev) => [...prev, { id, message, type }]);
+  };
+
+  const dismissToast = (id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // --- STUDIO STATES ---
   const [activeStudio, setActiveStudio] = useState<StudioType>("none");
@@ -65,6 +99,7 @@ export default function RootPage() {
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
   const [summaryText, setSummaryText] = useState("");
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [studioCache, setStudioCache] = useState<Record<string, StudioCacheEntry>>({});
 
   // --- UI STATES ---
   const [showLeftSidebar, setShowLeftSidebar] = useState(true);
@@ -111,6 +146,19 @@ export default function RootPage() {
         console.error("Failed to load settings", e);
       }
     }
+
+    // Sync documents from backend
+    axios.get(`${API_BASE}/api/documents`)
+      .then((res) => {
+        const backendDocs = res.data?.documents;
+        if (Array.isArray(backendDocs) && backendDocs.length > 0) {
+          setDocuments(backendDocs);
+          setActiveDoc(backendDocs[0]);
+          setHasEntered(true);
+          localStorage.setItem("notewave_docs", JSON.stringify(backendDocs));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Sync settings
@@ -120,9 +168,53 @@ export default function RootPage() {
     }
   }, [appSettings, mounted]);
 
+  // Keep per-document studio cache in sync
+  useEffect(() => {
+    if (!activeDoc) return;
+    setStudioCache((prev) => ({
+      ...prev,
+      [activeDoc.name]: {
+        podcastScript,
+        flashcards,
+        graphData,
+        debateTranscript,
+        vaultAudit,
+        quizQuestions,
+        summaryText,
+      },
+    }));
+  }, [activeDoc, podcastScript, flashcards, graphData, debateTranscript, vaultAudit, quizQuestions, summaryText]);
+
   const updateApiKey = (key: string) => {
     setApiKey(key);
     localStorage.setItem("notewave_gemini_key", key);
+  };
+
+  const cacheCurrentStudios = (docName: string) => {
+    if (!docName) return;
+    setStudioCache((prev) => ({
+      ...prev,
+      [docName]: {
+        podcastScript,
+        flashcards,
+        graphData,
+        debateTranscript,
+        vaultAudit,
+        quizQuestions,
+        summaryText,
+      },
+    }));
+  };
+
+  const applyStudioCache = (docName: string) => {
+    const cached = studioCache[docName] || emptyStudioCache();
+    setPodcastScript(cached.podcastScript);
+    setFlashcards(cached.flashcards);
+    setGraphData(cached.graphData);
+    setDebateTranscript(cached.debateTranscript);
+    setVaultAudit(cached.vaultAudit);
+    setQuizQuestions(cached.quizQuestions);
+    setSummaryText(cached.summaryText);
   };
 
   // --- STUDIO API HANDLERS ---
@@ -134,9 +226,12 @@ export default function RootPage() {
         fileId: activeDoc.name,
         api_key: apiKey,
       });
-      if (res.data?.script) setPodcastScript(res.data.script);
+      if (res.data?.script) {
+        setPodcastScript(res.data.script);
+        showToast("Podcast script generated!", "success");
+      }
     } catch (err) {
-      console.error("Podcast generation error:", err);
+      showToast(getApiErrorMessage(err), "error");
     } finally {
       setIsGeneratingPodcast(false);
     }
@@ -152,7 +247,7 @@ export default function RootPage() {
       });
       if (res.data?.flashcards) setFlashcards(res.data.flashcards);
     } catch (err) {
-      console.error("Flashcards generation error:", err);
+      showToast(getApiErrorMessage(err), "error");
     } finally {
       setIsGeneratingFlashcards(false);
     }
@@ -168,7 +263,7 @@ export default function RootPage() {
       });
       if (res.data?.nodes) setGraphData(res.data);
     } catch (err) {
-      console.error("Graph extraction error:", err);
+      showToast(getApiErrorMessage(err), "error");
     } finally {
       setIsGeneratingGraph(false);
     }
@@ -184,7 +279,7 @@ export default function RootPage() {
       });
       if (res.data?.transcript) setDebateTranscript(res.data.transcript);
     } catch (err) {
-      console.error("Debate error:", err);
+      showToast(getApiErrorMessage(err), "error");
     } finally {
       setIsDebating(false);
     }
@@ -200,7 +295,7 @@ export default function RootPage() {
       });
       setVaultAudit(res.data);
     } catch (err) {
-      console.error("Vault audit error:", err);
+      showToast(getApiErrorMessage(err), "error");
     } finally {
       setIsAuditing(false);
     }
@@ -217,7 +312,7 @@ export default function RootPage() {
       });
       if (res.data?.questions) setQuizQuestions(res.data.questions);
     } catch (err) {
-      console.error("Quiz generation error:", err);
+      showToast(getApiErrorMessage(err), "error");
     } finally {
       setIsGeneratingQuiz(false);
     }
@@ -233,7 +328,7 @@ export default function RootPage() {
       });
       if (res.data?.summary) setSummaryText(res.data.summary);
     } catch (err) {
-      console.error("Summary error:", err);
+      showToast(getApiErrorMessage(err), "error");
     } finally {
       setIsGeneratingSummary(false);
     }
@@ -265,12 +360,6 @@ export default function RootPage() {
       setActiveDoc(newDoc);
       localStorage.setItem("notewave_docs", JSON.stringify(updatedDocs));
 
-      // Pre-fill generated items if present
-      if (res.data.flashcards) setFlashcards(res.data.flashcards);
-      if (res.data.graph?.nodes?.length > 0) setGraphData(res.data.graph);
-      if (res.data.summary) setSummaryText(res.data.summary);
-
-      // Welcome message
       setMessages([
         {
           role: "assistant",
@@ -280,13 +369,13 @@ export default function RootPage() {
 
       setHasEntered(true);
       setIsUploadOpen(false);
+      showToast(`Indexed ${res.data.chunks} chunks. Studios generate on demand.`, "success");
 
       if (appSettings.autoAudit) {
         handleVaultAudit();
       }
-    } catch (err: any) {
-      console.error("Upload error:", err);
-      alert(err.response?.data?.detail || "Document upload failed. Ensure backend is running.");
+    } catch (err: unknown) {
+      showToast(getApiErrorMessage(err), "error");
     } finally {
       setIsUploading(false);
     }
@@ -294,6 +383,9 @@ export default function RootPage() {
 
   // --- SWITCH / DELETE DOCUMENT ---
   const handleSwitchFile = (doc: DocumentItem) => {
+    if (activeDoc) {
+      cacheCurrentStudios(activeDoc.name);
+    }
     setActiveDoc(doc);
     setMessages([
       {
@@ -302,22 +394,23 @@ export default function RootPage() {
       },
     ]);
     setActiveStudio("none");
-    setPodcastScript([]);
-    setFlashcards([]);
-    setGraphData({ nodes: [], links: [] });
-    setDebateTranscript([]);
-    setVaultAudit(null);
-    setQuizQuestions([]);
-    setSummaryText("");
+    applyStudioCache(doc.name);
   };
 
   const handleDeleteFile = async (e: React.MouseEvent, doc: DocumentItem) => {
     e.stopPropagation();
     try {
-      await axios.delete(`${API_BASE}/api/documents/${doc.name}`).catch(() => {});
+      await axios.delete(`${API_BASE}/api/documents/${encodeURIComponent(doc.name)}`, {
+        params: { api_key: apiKey },
+      });
     } catch (err) {
       console.error(err);
     }
+    setStudioCache((prev) => {
+      const next = { ...prev };
+      delete next[doc.name];
+      return next;
+    });
     const updated = documents.filter((d) => d.id !== doc.id);
     setDocuments(updated);
     localStorage.setItem("notewave_docs", JSON.stringify(updated));
@@ -399,9 +492,18 @@ export default function RootPage() {
     if (!query || !activeDoc) return;
 
     const newMessages: ChatMessage[] = [...messages, { role: "user", content: query }];
-    setMessages(newMessages);
+    setMessages([...newMessages, { role: "assistant", content: "" }]);
     setInput("");
     setIsLoading(true);
+    setChatStatus("Connecting...");
+
+    const finalize = (content: string) => {
+      setMessages((prev) => {
+        const copy = prev.slice();
+        copy[copy.length - 1] = { role: "assistant", content } as ChatMessage;
+        return copy;
+      });
+    };
 
     try {
       const res = await axios.post(`${API_BASE}/api/chat`, {
@@ -410,19 +512,43 @@ export default function RootPage() {
         api_key: apiKey,
       });
 
-      const reply = res.data?.content || res.data?.text || "Answer synthesized.";
-      setMessages([...newMessages, { role: "assistant", content: reply }]);
+      const jobId = res.data?.job_id;
+      if (!jobId) {
+        const reply = res.data?.content || res.data?.text || "Answer synthesized.";
+        finalize(reply);
+        return;
+      }
+
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      const deadline = Date.now() + 300000; // 5 min max
+      for (;;) {
+        if (Date.now() > deadline) throw new Error("Timed out waiting for the answer.");
+        await sleep(1200);
+        let reply: string | null = null;
+        try {
+          const statusRes = await axios.get(`${API_BASE}/api/chat/status/${jobId}`);
+          if (statusRes.data?.status === "done") {
+            reply = statusRes.data?.content || statusRes.data?.text || "Answer synthesized.";
+          } else {
+            setChatStatus(statusRes.data?.message || "Working...");
+          }
+        } catch (pollErr: any) {
+          if (pollErr.response?.status === 500) {
+            throw new Error(pollErr.response?.data?.detail || "Chat generation failed.");
+          }
+          setChatStatus("Contacting server...");
+        }
+        if (reply !== null) {
+          finalize(reply);
+          break;
+        }
+      }
     } catch (err: any) {
       console.error("Chat error:", err);
-      setMessages([
-        ...newMessages,
-        {
-          role: "assistant",
-          content: `⚠️ Error communicating with Gemini backend: ${err.response?.data?.detail || err.message}`,
-        },
-      ]);
+      finalize(`Error communicating with the backend: ${err.response?.data?.detail || err.message}`);
     } finally {
       setIsLoading(false);
+      setChatStatus("");
     }
   };
 
@@ -477,7 +603,7 @@ export default function RootPage() {
               variant="ghost"
               size="icon"
               onClick={() => setShowLeftSidebar(!showLeftSidebar)}
-              className="h-8 w-8 text-zinc-400 hover:text-white"
+              className="h-8 w-8 icon-btn"
             >
               <ChevronLeft className={`h-4 w-4 transition-transform ${!showLeftSidebar ? "rotate-180" : ""}`} />
             </Button>
@@ -486,7 +612,7 @@ export default function RootPage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setLeftSidebarWide(!leftSidebarWide)}
-                className="h-8 w-8 text-zinc-400 hover:text-white"
+                className="h-8 w-8 icon-btn"
               >
                 {leftSidebarWide ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </Button>
@@ -513,7 +639,7 @@ export default function RootPage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setRightSidebarWide(!rightSidebarWide)}
-                className="h-8 w-8 text-zinc-400 hover:text-white"
+                className="h-8 w-8 icon-btn"
               >
                 {rightSidebarWide ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </Button>
@@ -522,7 +648,7 @@ export default function RootPage() {
               variant="ghost"
               size="icon"
               onClick={() => setShowRightSidebar(!showRightSidebar)}
-              className="h-8 w-8 text-zinc-400 hover:text-white"
+              className="h-8 w-8 icon-btn"
             >
               <ChevronRight className={`h-4 w-4 transition-transform ${showRightSidebar ? "" : "rotate-180"}`} />
             </Button>
@@ -590,7 +716,7 @@ export default function RootPage() {
               {isLoading && (
                 <div className="flex items-center gap-3 text-xs text-zinc-400">
                   <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
-                  <span>Synthesizing answer with Gemini...</span>
+                  <span>{chatStatus || "Synthesizing answer with Gemini..."}</span>
                 </div>
               )}
               <div ref={messagesEndRef} className="h-10" />
@@ -621,7 +747,7 @@ export default function RootPage() {
                   setActiveStudio("voice");
                   setShowRightSidebar(true);
                 }}
-                className="absolute left-4 top-4 text-zinc-400 hover:text-zinc-100 transition-colors"
+                className="absolute left-4 top-4 icon-btn transition-colors"
               >
                 <Mic className="w-5 h-5" />
               </button>
@@ -711,6 +837,7 @@ export default function RootPage() {
           onClose: () => setActiveStudio("none"),
         }}
       />
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

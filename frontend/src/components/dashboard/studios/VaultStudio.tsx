@@ -43,12 +43,12 @@ export default function VaultStudio({ audit, isLoading, onAudit, onClose }: Vaul
               size="icon"
               onClick={onAudit}
               disabled={isLoading}
-              className="h-8 w-8 text-zinc-400 hover:text-white"
+              className="h-8 w-8 icon-btn"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
             </Button>
           )}
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-zinc-400 hover:text-white">
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 icon-btn">
             <X className="w-4 h-4" />
           </Button>
         </div>
